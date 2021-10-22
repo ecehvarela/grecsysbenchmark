@@ -252,12 +252,11 @@ class GRS():
         elif "NCF" == self._name.upper():
             print("Create a model for ncf")
             self._name = 'ncf'
-
             rs = m.Model(self._name)
             self._rs = rs.train_model(self._dataset, self.tfid_matrix_df, self.cosine_sim_matrix_df)
 
         else:
-            print("Create a model for {ubcf | ibcf | svd | cb}")
+            print("Create a molde for {ubcf | ibcf | svd | cb}")
             rs = m.Model(self._name)
             self._rs = rs.train_model(self._dataset, self.tfid_matrix_df, self.cosine_sim_matrix_df)
 
@@ -328,43 +327,70 @@ class GRS():
             Create a list of groups depending on their type
         '''
         print("Form {} groups of size {}".format(num_groups, size.upper()))
-
-        group_member_path = "../data/CAMRA2011/groupMember.txt"
-
-        group_members = dict()
-        with open(group_member_path, "r") as f:
-            f.readlines
-
-            for line in f:
-                group, members = line.split()
-                members = list(map(int, members.split(",")))
-                group_members[int(group)] = members
-
-        print(f"There are {len(group_members)} groups")
-        group_ids = list(group_members.keys())
-        group_ids.sort()
-
         self.group_type = type
         self.group_size = size
 
-        if (self._dataset_name == "camra2011"):
-            print("Just for CAMRa2011")
+        group_sizes = self.get_random_groups_for_size(num_groups, size)
 
-            selected_groups = np.random.choice(group_ids, num_groups, replace=False)
-            print("Selected groups:", selected_groups)
-            for g in selected_groups:
-                G = group_members.get(g)
+        if type == 'r':
+            for g in group_sizes:
+                G = np.random.choice(self._uids, g, replace=False)
                 self._groups.append(G)
-            print(self._groups)
 
-        # group_sizes = self.get_random_groups_for_size(num_groups, size)
-        # if type == 'r':
-        #     print("Insider 'r'")
-        #     for g in group_sizes:
-        #         G = np.random.choice(self._uids, g, replace=False)
-        #         self._groups.append(G)
-        #
-        #     print(self._groups)
+        elif type == 's':
+            print("DATASET in SIMILAR")
+            #print(self._dataset.shape)
+            print(self._dataset_original.shape)
+            print()
+            #data = get_data_clusters(self._dataset)
+            data = get_data_clusters(self._dataset_original)
+
+
+            #data = sd.get_pivot_table(self._dataset)
+            #cluster_labels = sd.form_clusters(data)
+            #print('Total labels: {}'.format(len(cluster_labels)))
+            #data['cluster'] = cluster_labels
+
+            for g in group_sizes:
+                G = sd.get_group(data, type, g)
+                self._groups.append(G)
+
+        elif type == 'd':
+            print("DATASET in DISSIMILAR")
+            #print(self._dataset.shape)
+            print(self._dataset_original.shape)
+            print()
+
+            #data = get_data_clusters(self._dataset)
+            data = get_data_clusters(self._dataset_original)
+
+            # data = sd.get_pivot_table(self._dataset)
+            # cluster_labels = sd.form_clusters(data)
+            # print('Total labels: {}'.format(len(cluster_labels)))
+            # data['cluster'] = cluster_labels
+
+            for g in group_sizes:
+                G = sd.get_group(data, type, g)
+                self._groups.append(G)
+
+        elif type == "rl":
+            print("DATASET in REAL")
+            # print(self._dataset.shape)
+            print(self._dataset_original.shape)
+            print()
+
+
+            #data = get_data_clusters(self._dataset)
+            data = get_data_clusters(self._dataset_original)
+
+            # data = sd.get_pivot_table(self._dataset)
+            # cluster_labels = sd.form_clusters(data)
+            # print('Total labels: {}'.format(len(cluster_labels)))
+            # data['cluster'] = cluster_labels
+
+            for g in group_sizes:
+                G = sd.get_group(data, type, g)
+                self._groups.append(G)
 
 
 
@@ -386,8 +412,7 @@ class GRS():
             Display the groups and their members
         '''
         for i, G in enumerate(self._groups):
-            # print("Group", i+1 ,":", ",".join([str(e) for e in G.tolist()]))
-            print("Group", i + 1, ":", ",".join([str(e) for e in G]))
+            print("Group", i+1 ,":", ",".join([str(e) for e in G.tolist()]))
 
     def items_rated_for_group_member(self, member):
         print("Getting iid list for member:", member)
@@ -574,21 +599,11 @@ class GRS():
         print("All user:", group_members)
         for user in group_members:
             # print("user", user)
-            testset_list = list(self._user_not_rated[user])
-            print(testset_list)
-            testset = [x for x in testset_list if x < 7100]
-            print(testset)
+            testset = list(self._user_not_rated[user])
+            # print(testset)
             # Create tensors
             t_member = torch.LongTensor([user])
             t_testset = torch.LongTensor(testset)
-
-            # print("Member:",t_member)
-            # for t in testset:
-            #     print("Item:", t)
-            #     t_testset = torch.LongTensor([t])
-            #     predictions = self._rs.model(t_member, t_testset).tolist()
-            #     print(predictions)
-            # sys.exit("AAAQQUUUII")
 
             predictions = self._rs.model(t_member, t_testset).tolist()
             predictions = zip(testset, predictions)

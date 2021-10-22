@@ -164,50 +164,50 @@ class GRS():
             Create a list of groups depending on their type
         '''
         print("Form {} groups of size {}".format(num_groups, size.upper()))
-
-        group_member_path =  "../data/CAMRA2011/groupMember.txt"
-
-        group_members = dict()
-        with open(group_member_path, "r") as f:
-            f.readlines
-
-            for line in f:
-                group, members = line.split()
-                members = list(map(int, members.split(",")))
-                group_members[int(group)] = members
-
-        print(f"There are {len(group_members)} groups")
-        group_ids = list(group_members.keys())
-        group_ids.sort()
-
-
         self.group_type = type
         self.group_size = size
 
+        group_sizes = self.get_random_groups_for_size(num_groups, size)
 
-        if (self._dataset_name == "camra2011"):
-            print("Just for CAMRa2011")
 
-            selected_groups = np.random.choice(group_ids, num_groups, replace=False)
-            print("Selected groups:", selected_groups)
-            for g in selected_groups:
-                G = group_members.get(g)
+        if type == 'r':
+            for g in group_sizes:
+                G = np.random.choice(self._uids, g, replace=False)
                 self._groups.append(G)
-            print(self._groups)
 
+        elif type == 's':
 
-        # group_sizes = self.get_random_groups_for_size(num_groups, size)
-        # if type == 'r':
-        #     print("Insider 'r'")
-        #     for g in group_sizes:
-        #         G = np.random.choice(self._uids, g, replace=False)
-        #         self._groups.append(G)
-        #
-        #     print(self._groups)
+            data = get_data_clusters(self._dataset)
+            #data = sd.get_pivot_table(self._dataset)
+            #cluster_labels = sd.form_clusters(data)
+            #print('Total labels: {}'.format(len(cluster_labels)))
+            #data['cluster'] = cluster_labels
 
+            for g in group_sizes:
+                G = sd.get_group(data, type, g)
+                self._groups.append(G)
 
+        elif type == 'd':
+            data = get_data_clusters(self._dataset)
+            # data = sd.get_pivot_table(self._dataset)
+            # cluster_labels = sd.form_clusters(data)
+            # print('Total labels: {}'.format(len(cluster_labels)))
+            # data['cluster'] = cluster_labels
 
+            for g in group_sizes:
+                G = sd.get_group(data, type, g)
+                self._groups.append(G)
 
+        elif type == "rl":
+            data = get_data_clusters(self._dataset)
+            # data = sd.get_pivot_table(self._dataset)
+            # cluster_labels = sd.form_clusters(data)
+            # print('Total labels: {}'.format(len(cluster_labels)))
+            # data['cluster'] = cluster_labels
+
+            for g in group_sizes:
+                G = sd.get_group(data, type, g)
+                self._groups.append(G)
 
 
 
@@ -411,11 +411,9 @@ class GRS():
             print("To predict:", len(self._group_unrated_items[i]))
             for member in G:
                 #print("Member:",member)
-                testset_list = list(self._group_unrated_items[i])
-                print(testset_list)
+                testset = list(self._group_unrated_items[i])
+                ##print(testset)
                 ##print("type of testset:", type(testset))
-                testset = [x for x in testset_list if x < 7100]
-                print(testset)
                 # Create tensors
                 t_member = torch.LongTensor([member])
                 t_testset = torch.LongTensor(testset)
